@@ -11,4 +11,7 @@ def cam_projection(selected):
         pm.duplicate(ic=False, name="proj_cam_fr" + frame)
         return None
         
+def projection_shader():
+    pm.shadingNode("surfaceShader", asShader = True, n = 'projection_fr' + frame)
+        
 cam_projection(selected)
