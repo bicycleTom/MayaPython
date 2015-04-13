@@ -5,9 +5,11 @@ frame_name = str(frame)
 frame_num = str(int(pm.currentTime(query=True)))
 selected = pm.ls(selection=True)
 
+#create a static duplicate of the shot/rander camera on the current frame
+
 def cam_projection(selected):
     if not selected:
-        pm.informBox(title="ERROR", message="Please Select Shot/Render Camera", ok="OK")
+        pm.informBox(title="ERROR", message="Please Select a shot Camera to continue", ok="OK")
         return None
     else:
         pm.duplicate(ic=False, name="proj_cam_fr" + frame_name)
@@ -19,14 +21,16 @@ cam_projection(selected)
 proj_cam = cam_projection
 proj_cam = pm.listRelatives(c=True, ad=True, s=True)
 
+#the following builds everything needed for the projection surface shader and connects the above created camera
+
 def shader_projection(selected):
     if not selected:
         return None
     else:
-        projection_shader = pm.shadingNode("surfaceShader", asShader = True, n = 'projectionShader_fr' + frame_name)
+        projection_shader = pm.shadingNode("surfaceShader", asShader = True, n = "proj_shader_fr" + frame_name)
         filename = pm.shadingNode("file", asTexture = True)
         twoDTexture = pm.shadingNode("place2dTexture", asUtility = True)
-        projection_utility = pm.shadingNode("projection", asUtility = True, n = "projection_utility_fr" + frame_name)
+        projection_utility = pm.shadingNode("projection", asUtility = True, n = "proj_utility_fr" + frame_name)
         
         proj_utility_name = str(projection_utility)
         
