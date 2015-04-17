@@ -12,19 +12,14 @@ def cam_projection(selected):
         pm.informBox(title="ERROR", message="Please Select a shot Camera to continue", ok="OK")
         return None
     else:
-        pm.duplicate(ic=False, name="proj_cam_fr" + frame_name)
-        return None
+        newCamera = pm.duplicate(ic=False, name="proj_cam_fr" + frame_name)
+        return newCamera
         
-        
-cam_projection(selected)
-
-proj_cam = cam_projection
-proj_cam = pm.listRelatives(c=True, ad=True, s=True)
-
 #the following builds everything needed for the projection surface shader and connects the above created camera
 
-def shader_projection(selected):
-    if not selected:
+def shader_projection(newCamera):
+    proj_cam = pm.listRelatives(c=True, ad=True, s=True)
+    if not newCamera:
         return None
     else:
         projection_shader = pm.shadingNode("surfaceShader", asShader = True, n = "proj_shader_fr" + frame_name)
@@ -61,6 +56,9 @@ def shader_projection(selected):
         pm.connectAttr(twoDTexture.outUV, filename.uv, f = True)
         pm.connectAttr(twoDTexture.outUvFilterSize, filename.uvFilterSize, f= True)
 
-        return None
+        return True
 
-shader_projection(selected)
+def main():
+    cam_projection(selected)
+    shader_projection(selected)
+main()
