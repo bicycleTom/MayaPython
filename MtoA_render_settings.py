@@ -3,6 +3,11 @@ import mtoa.aovs as aovs
 
 def main():
 
+	createAOVS()
+
+
+def createAOVS():
+
 	#avaialbe aovs in maya
 	BUILTIN_AOVS = ['P', 'Z', 'N', 'opacity', 'motionvector', 'Pref', 'raycount', 'cputime', 'ID', 'RGBA', 'direct', 'indirect', 'emission', 'background', 'diffuse', 'specular',
  'transmission', 'sss', 'volume', 'albedo', 'diffuse_direct', 'diffuse_indirect', 'diffuse_albedo', 'specular_direct', 'specular_indirect', 'specular_albedo', 'coat',
@@ -22,13 +27,17 @@ def main():
  	#deliverable aovs for comp
  	PRODUCTION_AOVS = ['RGBA', 'diffuse', 'diffuse_indirect', 'specular', 'specular_direct', 'specular_indirect', 'N', 'P', 'Pref', 'Z']
 
+ 	#leave user added aovs
  	EXISTING_AOVS = []
  	for aov in aovs.getAOVNodes(names=False):
  		EXISTING_AOVS.append(str(aov))
  	EXISTING_AOVS = [aov.replace('aiAOV_', '') for aov in EXISTING_AOVS]
 
  	NEW_AOVS = list(set(PRODUCTION_AOVS) - set(EXISTING_AOVS))
- 	#print NEW_AOVS
 
  	for item in NEW_AOVS:
  		addAOV = aovs.AOVInterface().addAOV(item)
+
+ 	#print NEW_AOVS
+
+ 	cmds.setAttr("defaultArnoldDriver" + ".mergeAOVs", 1)
