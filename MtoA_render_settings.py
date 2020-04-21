@@ -15,29 +15,33 @@ def createAOVS():
  'transmission_albedo', 'sss_direct', 'sss_indirect', 'sss_albedo', 'volume_direct', 'volume_indirect', 'volume_albedo', 'volume_opacity', 'volume_Z',
  'shadow_matte', 'AA_inv_density']
 
- 	#avaialbe aovs in maya
+	#avaialbe aovs in maya
 	LIGHTING_AOVS = ['RGBA', 'direct', 'indirect', 'emission', 'diffuse', 'specular', 'transmission', 'sss', 'volume', 'diffuse_direct', 'diffuse_indirect', 'diffuse_albedo',
  'specular_direct', 'specular_indirect', 'specular_albedo', 'coat', 'coat_direct', 'coat_indirect', 'coat_albedo', 'transmission_direct', 'transmission_indirect',
  'transmission_albedo', 'sss_direct', 'sss_indirect', 'sss_albedo', 'volume_direct', 'volume_indirect', 'volume_albedo', 'shadow_matte', 'sheen', 'sheen_direct',
  'sheen_indirect', 'sheen_albedo']
 
- 	#3rd party aovs
- 	EXTRA_AOVS = ['crypto_asset', 'crypto_material', 'crypto_object']
+	#3rd party aovs
+	EXTRA_AOVS = ['crypto_asset', 'crypto_material', 'crypto_object']
 
- 	#deliverable aovs for comp
- 	PRODUCTION_AOVS = ['RGBA', 'diffuse', 'diffuse_indirect', 'specular', 'specular_direct', 'specular_indirect', 'N', 'P', 'Pref', 'Z']
+	#deliverable aovs for comp
+	PRODUCTION_AOVS = ['RGBA', 'diffuse', 'diffuse_indirect', 'specular', 'specular_direct', 'specular_indirect', 'N', 'P', 'Pref', 'Z']
 
- 	#leave user added aovs
- 	EXISTING_AOVS = []
- 	for aov in aovs.getAOVNodes(names=False):
- 		EXISTING_AOVS.append(str(aov))
- 	EXISTING_AOVS = [aov.replace('aiAOV_', '') for aov in EXISTING_AOVS]
+	#leave user added aovs
+	EXISTING_AOVS = []
+	for aov in aovs.getAOVNodes(names=False):
+		EXISTING_AOVS.append(str(aov))
+	EXISTING_AOVS = [aov.replace('aiAOV_', '') for aov in EXISTING_AOVS]
 
- 	NEW_AOVS = list(set(PRODUCTION_AOVS) - set(EXISTING_AOVS))
+	NEW_AOVS = list(set(PRODUCTION_AOVS) - set(EXISTING_AOVS))
 
- 	for item in NEW_AOVS:
- 		addAOV = aovs.AOVInterface().addAOV(item)
+	for item in NEW_AOVS:
+		addAOV = aovs.AOVInterface().addAOV(item)
 
- 	#print NEW_AOVS
+	for item in PRODUCTION_AOVS:
+		if item in LIGHTING_AOVS:
+			cmds.setAttr("aiAOV_" + item + ".lightGroups", 1)
+		
+	#print NEW_AOVS
 
- 	cmds.setAttr("defaultArnoldDriver" + ".mergeAOVs", 1)
+	cmds.setAttr("defaultArnoldDriver" + ".mergeAOVs", 1)
