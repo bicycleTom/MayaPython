@@ -24,40 +24,40 @@ def CreateMaterial():
 	#SG
 
 	#aiStandardSurface
-	shader = cmds.shadingNode("aiStandardSurface", asShader = True, name = "substancePainter")
+	shader = cmds.shadingNode('aiStandardSurface', asShader = True, name = 'substancePainter')
 
 	#BaseColor Texture
-	colorFile = cmds.shadingNode("aiImage", asTexture = True, name = "BaseColor")
-	cmds.connectAttr(colorFile + ".outColor", shader + ".baseColor")
-	cmds.setAttr('%s.filename' % colorFile, path[0] + '/' + ''.join(s for s in spfiles if "BaseColor" in s), type="string")
-	cmds.setAttr(colorFile + ".colorSpace", "Raw", type="string" )
+	colorFile = cmds.shadingNode('aiImage', asTexture = True, name = 'BaseColor')
+	cmds.connectAttr(colorFile + '.outColor', shader + '.baseColor')
+	cmds.setAttr('%s.filename' % colorFile, path[0] + '/' + ''.join(s for s in spfiles if 'BaseColor' in s), type='string')
+	cmds.setAttr(colorFile + '.colorSpace', 'Raw', type='string' )
 
 	#Roughness Texture
-	roughnessFile = cmds.shadingNode("aiImage", asTexture = True, name = "Roughness")
-	cmds.connectAttr(roughnessFile + ".outColorR", shader + ".specularRoughness")
-	cmds.setAttr('%s.filename' % roughnessFile, path[0] + '/' + ''.join(s for s in spfiles if "Roughness" in s), type="string")
-	cmds.setAttr(roughnessFile + ".colorSpace", "Raw", type="string")
+	roughnessFile = cmds.shadingNode('aiImage', asTexture = True, name = 'Roughness')
+	cmds.connectAttr(roughnessFile + '.outColorR', shader + '.specularRoughness')
+	cmds.setAttr('%s.filename' % roughnessFile, path[0] + '/' + ''.join(s for s in spfiles if 'Roughness' in s), type='string')
+	cmds.setAttr(roughnessFile + '.colorSpace', 'Raw', type='string')
 
 	#Normal Texture
-	normalFile = cmds.shadingNode("aiImage", asTexture = True, name = "Normal")
-	normalMap = cmds.shadingNode("aiNormalMap", asUtility = True, name = "NormalMap")
-	cmds.connectAttr(normalMap + ".outValue", shader + ".normalCamera")
-	cmds.connectAttr(normalFile + ".outColor", normalMap + ".input")
-	cmds.setAttr('%s.filename' % normalFile, path[0] + '/' + ''.join(s for s in spfiles if "Normal" in s), type="string")
-	cmds.setAttr(normalFile + ".colorSpace", "Raw", type="string")
+	normalFile = cmds.shadingNode('aiImage', asTexture = True, name = 'Normal')
+	normalMap = cmds.shadingNode('aiNormalMap', asUtility = True, name = 'NormalMap')
+	cmds.connectAttr(normalMap + '.outValue', shader + '.normalCamera')
+	cmds.connectAttr(normalFile + '.outColor', normalMap + '.input')
+	cmds.setAttr('%s.filename' % normalFile, path[0] + '/' + ''.join(s for s in spfiles if 'Normal' in s), type='string')
+	cmds.setAttr(normalFile + '.colorSpace', 'Raw', type='string')
 
 	#Opacity Texture
-	opacityFile = cmds.shadingNode("aiImage", asTexture = True, name = "Opacity")
-	cmds.connectAttr(opacityFile + ".outColor", shader + ".opacity")
-	cmds.setAttr(opacityFile + ".ignoreMissingTextures", 1)
-	cmds.setAttr(opacityFile + ".missingTextureColor", 1, 1, 1)
-	cmds.setAttr('%s.filename' % opacityFile, path[0] + '/' + ''.join(s for s in spfiles if "Opacity" in s), type="string")
-	cmds.setAttr(opacityFile + ".colorSpace", "Raw", type="string")
+	opacityFile = cmds.shadingNode('aiImage', asTexture = True, name = 'Opacity')
+	cmds.connectAttr(opacityFile + '.outColor', shader + '.opacity')
+	cmds.setAttr(opacityFile + '.ignoreMissingTextures', 1)
+	cmds.setAttr(opacityFile + '.missingTextureColor', 1, 1, 1)
+	cmds.setAttr('%s.filename' % opacityFile, path[0] + '/' + ''.join(s for s in spfiles if 'Opacity' in s), type='string')
+	cmds.setAttr(opacityFile + '.colorSpace', 'Raw', type='string')
 
 	#Metalness Texture
-	metalnessFile = cmds.shadingNode("aiImage", asTexture = True, name = "Metalness")
-	cmds.setAttr('%s.filename' % metalnessFile, path[0] + '/' + str(spfiles[0]), type="string")
-	cmds.setAttr(metalnessFile + ".colorSpace", "Raw", type="string")
+	metalnessFile = cmds.shadingNode('aiImage', asTexture = True, name = 'Metalness')
+	cmds.setAttr('%s.filename' % metalnessFile, path[0] + '/' + str(spfiles[0]), type='string')
+	cmds.setAttr(metalnessFile + '.colorSpace', 'Raw', type='string')
 
 	return shader
 
