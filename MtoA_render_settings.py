@@ -27,7 +27,7 @@ def createAOVS():
 	#deliverable aovs for comp
 	PRODUCTION_AOVS = ['RGBA', 'diffuse', 'diffuse_indirect', 'specular', 'specular_direct', 'specular_indirect', 'N', 'P', 'Pref', 'Z']
 
-	#leave user added aovs
+	#leave user added aovs and add missing
 	EXISTING_AOVS = []
 	for aov in aovs.getAOVNodes(names=False):
 		EXISTING_AOVS.append(str(aov))
@@ -38,10 +38,11 @@ def createAOVS():
 	for item in NEW_AOVS:
 		addAOV = aovs.AOVInterface().addAOV(item)
 
+	#split light groups
 	for item in PRODUCTION_AOVS:
 		if item in LIGHTING_AOVS:
-			cmds.setAttr("aiAOV_" + item + ".lightGroups", 1)
+			cmds.setAttr('aiAOV_' + item + '.lightGroups', 1)
 		
 	#print NEW_AOVS
 
-	cmds.setAttr("defaultArnoldDriver" + ".mergeAOVs", 1)
+	cmds.setAttr('defaultArnoldDriver' + '.mergeAOVs', 1)
