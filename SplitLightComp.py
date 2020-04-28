@@ -1,28 +1,23 @@
 import nuke
 
+count = 0
+
+mirror = -1
+	
+x_shift = 34
+y_label_shift = 6
+y_dot_shift = 7
+
 def main(node):
 
 	if node.Class() != "Read":
 		nuke.message("Select an EXR Read node.")
 	else:
 		autocomp(node)
+		addPlate(node)
+		diagnostic(node)
 
-def shuffleAll(node, layer):
-	shuffleNode = nuke.nodes.Shuffle(label='[value in]', inputs=[node])
-	shuffleNode['in'].setValue(layer)
-
-	return shuffleNode
-
-def removeAll(node):
-	removeNode = nuke.nodes.Remove(label='[value channels2]')
-
-	return removeNode
-
-def shuffleCopyOut(node):
-	shuffleCopyNode = nuke.nodes.ShuffleCopy(label='[value out]')
-
-	return shuffleCopyNode
-
+#split passes from render
 def autocomp(node):
 
 	count = 0
@@ -55,6 +50,10 @@ def autocomp(node):
 		count = count + 1
 		#print count
 
+		global prevMerge
+		global copy_dot
+		global copyNode
+
 		current_dot = main_dot
 
 		light_dots = nuke.nodes.Dot()
@@ -77,16 +76,22 @@ def autocomp(node):
 		removeNode['xpos'].setValue(int(main_dot['xpos'].value() - x_shift))
 		removeNode['ypos'].setValue(int(main_dot['ypos'].value() + 135))
 
-		shuffleCopyNode = nuke.nodes.ShuffleCopy(label='[value out]')
-		shuffleCopyNode['out'].setValue(str(layer))
-		shuffleCopyNode.connectInput(0, removeNode)
-		shuffleCopyNode.connectInput(1, removeNode)
-		shuffleCopyNode['xpos'].setValue(int(main_dot['xpos'].value() - x_shift))
-		shuffleCopyNode['ypos'].setValue(int(main_dot['ypos'].value() + 800))
+		#shuffleCopyNode = nuke.nodes.ShuffleCopy(label='[value out]')
+		#shuffleCopyNode['out'].setValue(str(layer))
+		#shuffleCopyNode.connectInput(0, removeNode)
+		#shuffleCopyNode.connectInput(1, removeNode)
+		#shuffleCopyNode['xpos'].setValue(int(main_dot['xpos'].value() - x_shift))
+		#shuffleCopyNode['ypos'].setValue(int(main_dot['ypos'].value() + 800))
+
+		shuffleOutNode = nuke.nodes.Shuffle(label='[value out]')
+		shuffleOutNode['out'].setValue(str(layer))
+		shuffleOutNode.connectInput(0, removeNode)
+		shuffleOutNode['xpos'].setValue(int(main_dot['xpos'].value() - x_shift))
+		shuffleOutNode['ypos'].setValue(int(main_dot['ypos'].value() + 800))
 
 		if (count == 1):
 			mergePlus = nuke.nodes.Merge2()
-			mergePlus.connectInput(1, shuffleCopyNode)
+			mergePlus.connectInput(1, shuffleOutNode)
 			mergePlus['operation'].setValue('plus')
 			mergePlus['also_merge'].setValue('all')
 			mergePlus['xpos'].setValue(int(main_dot['xpos'].value() - x_shift))
@@ -95,23 +100,62 @@ def autocomp(node):
 		
 		if (count > 1):
 			mergePlus = nuke.nodes.Merge2()
-			mergePlus.connectInput(1, shuffleCopyNode)
+			mergePlus.connectInput(1, shuffleOutNode)
 			mergePlus['operation'].setValue('plus')
 			mergePlus['also_merge'].setValue('all')
 			mergePlus['xpos'].setValue(int(main_dot['xpos'].value() - x_shift))
 			mergePlus['ypos'].setValue(int(main_dot['ypos'].value() + 855))
-			mergePlus.connectInput(1, prevMerge)
+			mergePlus.connectInput(0, prevMerge)
 			prevMerge = mergePlus
 
 	copy_dot = nuke.nodes.Dot(xpos=prevMerge.xpos() - 50 , ypos=main_dot_end.ypos())
 	copy_dot.connectInput(0, main_dot_end)
 
 	copyNode = nuke.nodes.Copy(xpos=prevMerge.xpos(), ypos=copy_dot.ypos() + 75)
-	copyNode.connectInput(0, copy_dot)
-	copyNode.connectInput(1, prevMerge)
+	copyNode['from0'].setValue('rgba.alpha')
+	copyNode['to0'].setValue('rgba.alpha')
+	copyNode.connectInput(0, prevMerge)
+	copyNode.connectInput(1, copy_dot)
 
+#merge lights over background plate
 def addPlate(node):
-	plate = nuke.nodes.Reformat()
+	
+	mergePlateNode = nuke.nodes.Merge2(label='background', xpos=copyNode.xpos(), ypos=copyNode.ypos() + 175)
+	mergePlateNode.connectInput(1, copyNode)
+
+	plateRefNode = nuke.nodes.Reformat(xpos=mergePlateNode.xpos() - 1800, ypos=mergePlateNode.ypos())
+	plateRefNode['format'].setValue('2K_DCP')
+	mergePlateNode.connectInput(0, plateRefNode)
+
+	refOutNode = nuke.nodes.Reformat(xpos=mergePlateNode.xpos(), ypos=mergePlateNode.ypos() + 175)
+	refOutNode['format'].setValue('2K_DCP')
+	refOutNode.connectInput(0, mergePlateNode)
+
+	writeNode = nuke.nodes.Write(xpos=mergePlateNode.xpos(), ypos=mergePlateNode.ypos() + 275)
+	writeNode.connectInput(0, refOutNode)
+
+def diagnostic(node):
+
+	shuffleNewRgba = nuke.nodes.Shuffle(inputs=[prevMerge], label='[value out]', xpos=prevMerge.xpos() + 400, ypos=prevMerge.ypos() - y_label_shift)
+	shuffleNewRgba['out'].setValue('rgba_new')
+
+	removeKeepRgba = nuke.nodes.Remove(inputs=[copy_dot], xpos=copy_dot.xpos() + 300, ypos=copy_dot.ypos() - y_label_shift)
+	removeKeepRgba['operation'].setValue('keep')
+
+	shuffleOldRgba = nuke.nodes.Shuffle(inputs=[removeKeepRgba], label='[value out]', xpos=removeKeepRgba.xpos(), ypos=removeKeepRgba.ypos() + 35)
+	shuffleOldRgba['out'].setValue('rgba_original')
+
+	mergeToDiagnostic = nuke.nodes.Merge2(inputs=[shuffleNewRgba, shuffleOldRgba], xpos=shuffleNewRgba.xpos(), ypos=shuffleOldRgba.ypos() + y_label_shift)
+	mergeToDiagnostic['also_merge'].setValue('all')
+
+	mergeDiffDot = nuke.nodes.Dot(inputs=[mergeToDiagnostic], xpos=mergeToDiagnostic.xpos() + 1800, ypos=mergeToDiagnostic.ypos() - 250)
+
+	contactSheetDot = nuke.nodes.Dot(inputs=[mergeDiffDot], xpos=mergeDiffDot.xpos() + 250, ypos=mergeDiffDot.ypos())
+
+	mergedifference = nuke.nodes.Merge2(inputs=[mergeDiffDot, mergeDiffDot], label='A: [value Achannels] B: [value Bchannels]', xpos=mergeDiffDot.xpos() - x_shift, ypos=mergeDiffDot.ypos() + 100)
+
+
+
 
 
 
