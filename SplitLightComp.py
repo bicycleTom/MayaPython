@@ -119,6 +119,9 @@ def autocomp(node):
 
 #merge lights over background plate
 def addPlate(node):
+
+	global mergePlateNode
+	global writeNode
 	
 	mergePlateNode = nuke.nodes.Merge2(label='background', xpos=copyNode.xpos(), ypos=copyNode.ypos() + 175)
 	mergePlateNode.connectInput(1, copyNode)
@@ -131,7 +134,7 @@ def addPlate(node):
 	refOutNode['format'].setValue('2K_DCP')
 	refOutNode.connectInput(0, mergePlateNode)
 
-	writeNode = nuke.nodes.Write(xpos=mergePlateNode.xpos(), ypos=mergePlateNode.ypos() + 275)
+	writeNode = nuke.nodes.Write(label='comp', xpos=mergePlateNode.xpos(), ypos=mergePlateNode.ypos() + 275)
 	writeNode.connectInput(0, refOutNode)
 
 def diagnostic(node):
@@ -141,6 +144,7 @@ def diagnostic(node):
 
 	removeKeepRgba = nuke.nodes.Remove(inputs=[copy_dot], xpos=copy_dot.xpos() + 300, ypos=copy_dot.ypos() - y_label_shift)
 	removeKeepRgba['operation'].setValue('keep')
+	removeKeepRgba['channels'].setValue('rgb')
 
 	shuffleOldRgba = nuke.nodes.Shuffle(inputs=[removeKeepRgba], label='[value out]', xpos=removeKeepRgba.xpos(), ypos=removeKeepRgba.ypos() + 35)
 	shuffleOldRgba['out'].setValue('rgba_original')
@@ -152,9 +156,68 @@ def diagnostic(node):
 
 	contactSheetDot = nuke.nodes.Dot(inputs=[mergeDiffDot], xpos=mergeDiffDot.xpos() + 250, ypos=mergeDiffDot.ypos())
 
-	mergedifference = nuke.nodes.Merge2(inputs=[mergeDiffDot, mergeDiffDot], label='A: [value Achannels] B: [value Bchannels]', xpos=mergeDiffDot.xpos() - x_shift, ypos=mergeDiffDot.ypos() + 100)
+	#diff the original render with the graded lights
+	mergeDifference = nuke.nodes.Merge2(inputs=[mergeDiffDot, mergeDiffDot], label='A: [value Achannels] B: [value Bchannels]', xpos=mergeDiffDot.xpos() - x_shift, ypos=mergeDiffDot.ypos() + 100)
+	mergeDifference['operation'].setValue('difference')
+	mergeDifference['Achannels'].setValue('rgba_new')
+	mergeDifference['Bchannels'].setValue('rgba_original')
 
+	diffText = nuke.nodes.Text2(inputs=[mergeDifference], xpos=mergeDifference.xpos(), ypos=mergeDifference.ypos() + 35)
+	diffText['message'].setValue('Difference')
+	diffText['box'].setValue((0.0, 0.0, 2048.0, 1080.0))
+	diffText['yjustify'].setValue('bottom')
 
+	diffRef = nuke.nodes.Reformat(inputs=[diffText], xpos=mergeDifference.xpos(), ypos=mergeDifference.ypos() + 70)
+	diffRef['type'].setValue('scale')
+	diffRef['scale'].setValue(0.5)
+
+	diffCrop = nuke.nodes.Crop(inputs=[diffRef], xpos=mergeDifference.xpos(), ypos=mergeDifference.ypos() + 105)
+	diffCrop['box'].setValue((0.0, 0.0, 1024.0, 540.0))
+
+	diffTrans = nuke.nodes.Transform(inputs=[diffCrop], xpos=mergeDifference.xpos(), ypos=mergeDifference.ypos() + 140)
+
+	#layout each light as a collage
+	contactRemove = nuke.nodes.Remove(inputs=[contactSheetDot], label='[value channels], [value channels2], [value channels3]', xpos=contactSheetDot.xpos() - x_shift, ypos=contactSheetDot.ypos() + 100)
+	#contactRemove['operation'].setValue('keep')
+	contactRemove['channels'].setValue('rgba')
+	contactRemove['channels2'].setValue('rgba_new')
+	contactRemove['channels3'].setValue('rgba_original')
+
+	contactLights = nuke.nodes.LayerContactSheet(showLayerNames=True, inputs=[contactRemove], xpos=contactRemove.xpos(), ypos=contactRemove.ypos() + 35)
+	contactLights['width'].setValue((1024.0))
+	contactLights['height'].setValue((1080.0))
+
+	contactCrop = nuke.nodes.Crop(inputs=[contactLights], xpos=contactRemove.xpos(), ypos=contactRemove.ypos() + 70)
+	contactCrop['box'].setValue((0.0, 0.0, 1024.0, 1080.0))
+
+	contactTrans = nuke.nodes.Transform(inputs=[contactCrop], xpos=contactRemove.xpos(), ypos=contactRemove.ypos() + 105)
+	contactTrans['translate'].setValue((1024.0, 0.0))
+
+	#merge it altogether
+	mergeRef = nuke.nodes.Reformat(format='2K_DCP', xpos=mergeDifference.xpos() + 100, ypos=mergeDifference.ypos() + 280)
+
+	#add comp result
+	mergeConDiff = nuke.nodes.Merge2(inputs=[mergeRef, diffTrans], xpos=mergeDifference.xpos(), ypos=mergeDifference.ypos() + 280 + y_label_shift)
+	mergeConDiff.connectInput(4, contactTrans)
+
+	shuffleComp = nuke.nodes.Shuffle(inputs=[mergePlateNode], xpos=mergePlateNode.xpos() + 1700, ypos=mergePlateNode.ypos())
+	shuffleComp['alpha'].setValue('white')
+
+	refComp = nuke.nodes.Reformat(inputs=[shuffleComp], xpos=shuffleComp.xpos(), ypos=shuffleComp.ypos() + 35)
+	refComp['type'].setValue('scale')
+	refComp['scale'].setValue(0.5)
+
+	cropComp = nuke.nodes.Crop(inputs=[refComp], xpos=shuffleComp.xpos(), ypos=shuffleComp.ypos() + 70)
+	cropComp['box'].setValue((0.0, 0.0, 1024.0, 540.0))
+
+	transComp = nuke.nodes.Transform(inputs=[cropComp], xpos=shuffleComp.xpos(), ypos=shuffleComp.ypos() + 105)
+	transComp['translate'].setValue((0.0, 540.0))
+
+	mergeComp = nuke.nodes.Merge2(inputs=[mergeConDiff, transComp], xpos=mergeConDiff.xpos(), ypos=transComp.ypos())
+
+	reformatAll = nuke.nodes.Reformat(inputs=[mergeComp], format='2K_DCP', xpos=mergeConDiff.xpos(), ypos=mergeConDiff.ypos() + 270)
+
+	writeSplit = nuke.nodes.Write(inputs=[reformatAll], label='split lights', xpos=mergeConDiff.xpos(), ypos=writeNode.ypos())
 
 
 
