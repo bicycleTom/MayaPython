@@ -19,6 +19,9 @@ def use_clipboard():
 
     return clipboard_text
 
+def findLight():
+	print "I will find the light"
+
 
 
 """
@@ -28,11 +31,11 @@ set cut_paste_input [stack 0]
 version 11.1 v1
 push $cut_paste_input
 Grade {
- white {1 0.5 0.25 1}
- multiply 0.5
+ white {1.466666698 0.6266666651 0.9066666961 1}
  name Grade1
  selected true
- xpos -50
- ypos -136
+ xpos 594
+ ypos 358
 }
+
 """
